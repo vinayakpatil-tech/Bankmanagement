@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.19;
+
+contract Bankmanagement {
+    struct CreateAccount {
+        string name;
+        uint256 accountNo;
+        address location;
+    }
+
+    mapping(uint256 => CreateAccount) private banks;
+    address private RBI;
+    uint256 private balance;
+    bool private balanceUpdated; // Ensures updateBalance is called before checkbalance
+
+    event BalanceUpdate(uint256 oldBalance, uint256 newBalance);
+
+    modifier onlyAdmin() {
+        require(msg.sender == RBI, "Not authorized");
+        _;
+    }
+
+    constructor() {
+        RBI = msg.sender;
+    }
+
+    function createAccount(
+        string memory _name,
+        uint256 _accountNo,
+        address _location
+    ) public onlyAdmin {
+        banks[_accountNo] = CreateAccount(_name, _accountNo, _location);
+    }
+
+    function funding() public payable {
+        require(msg.value > 1e18, "Did not meet requirement");
+    }
+
+    function updateBalance() public onlyAdmin {
+        uint256 oldBalance = balance;
+        balance = address(this).balance;
+        balanceUpdated = true; // Mark balance as updated
+        emit BalanceUpdate(oldBalance, balance);
+    }
+
+    function checkBalance() public view onlyAdmin returns (uint256) {
+        require(balanceUpdated, "Balance update required before checking");
+        return balance;
+    }
+}
