@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.19;
+
+contract bankmanagement{
+    struct bandetails{
+        string bankName;
+        uint256 bankNo;
+        string bankLoc;
+        bool exist;
+        bool isBlocked;
+    }
+    mapping(uint256=>bandetails) private getBank;
+    address private admin1;
+    address private admin2;
+    modifier onlyadmin1(){
+        require(msg.sender==admin1,"you are no RBI");
+        _;
+    }
+    modifier onlyadmin2(){
+        require(msg.sender==admin2,"you are not bank");
+        _;
+    }
+        constructor(address _admin1,address _admin2){
+            admin1=_admin1;
+            admin2=_admin2;
+        }
+    
+    function addbank(string memory _bankName,uint256 _bankNo,string memory _bankLoc) public onlyadmin1 {
+     getBank[_bankNo]=bandetails(_bankName,_bankNo,_bankLoc,true,true);
+    }
+    function removeBank(uint256 _bankNo) public onlyadmin1 {
+        require(getBank[_bankNo].exist,"Bank doesnot exist");
+        delete getBank[_bankNo];
+    }
+    function blockbank(uint256 _bankNo) public onlyadmin1 {
+        require(getBank[_bankNo].exist,"Bank does not exists");
+        getBank[_bankNo].isBlocked=true;
+    }
+    function unblock(uint256 _bankNo) public onlyadmin1 {
+        require(getBank[_bankNo].exist,"not exist");
+        getBank[_bankNo].isBlocked=false;
+    }
+    struct accDetails{
+        string name;
+        uint256 accNo;
+        string location;
+    }
+    mapping(uint256=>accDetails) private banks;
+     uint256 private  balance;
+     bool private isupdate;
+    event balanceupadate(uint256 oldbalnce,uint256 newbalance);
+    function createAccount(string memory _name,uint256 _accNo,string memory _location) public onlyadmin2 {
+        banks[_accNo]=accDetails(_name,_accNo,_location);
+    }
+    function funding(uint256) public payable {
+        require(msg.value > 1e18,"not sufficient");
+    }
+    function updateBalnce() public onlyadmin2{
+    uint256 oldbalnce = balance;
+    balance=address(this).balance;
+    isupdate = true;
+    emit balanceupadate(oldbalnce, balance);
+    }
+    function checkBalnce() public view returns(uint256) {
+    require(isupdate,"not checked");
+    return address(this).balance;
+    }
+}
